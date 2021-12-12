@@ -12,28 +12,79 @@ func main() {
     
     let lines = inputString.components(separatedBy: "\n")
         .filter { !$0.isEmpty }
-    
-    // Sample algorithm
-    var scoreboard = [String: Int]()
+
+    var caves = [String: Cave]()
+
     lines.forEach { line in
-        let (name, score) = parseLine(line)
-        scoreboard[name] = score
+        let components = line.components(separatedBy: "-")
+        let cave1 = components[0]
+        let cave2 = components[1]
+
+        if var cave = caves[cave1] {
+            cave.neighbours.append(cave2)
+            caves[cave1] = cave
+        } else {
+            let type: CaveType = {
+                if cave1 == "start" { return .start }
+                if cave1 == "end" { return .end }
+                if cave1.lowercased() == cave1 { return .small }
+                return .big
+            }()
+            caves[cave1] = Cave(type: type, neighbours: [cave2])
+        }
+
+        if var cave = caves[cave2] {
+            cave.neighbours.append(cave1)
+            caves[cave2] = cave
+        } else {
+            let type: CaveType = {
+                if cave2 == "start" { return .start }
+                if cave2 == "end" { return .end }
+                if cave2.lowercased() == cave2 { return .small }
+                return .big
+            }()
+            caves[cave2] = Cave(type: type, neighbours: [cave1])
+        }
     }
-    scoreboard
-        .sorted { lhs, rhs in
-            lhs.value > rhs.value
-        }
-        .forEach { name, score in
-            print("\(name) \(score) pts")
-        }
+
+    let routes = process("start", path: [], caves: caves)
+    print(routes)
 }
 
-func parseLine(_ line: String) -> (name: String, score: Int) {
-    let helper = RegexHelper(pattern: #"([\-\w]*)\s(\d+)"#)
-    let result = helper.parse(line)
-    let name = result[0]
-    let score = Int(result[1])!
-    return (name: name, score: score)
+func process(_ node: String, path: [String], caves: [String: Cave]) -> Int {
+    var routes = 0
+    var _path = path
+    _path.append(node)
+    for cave in caves[node]!.neighbours {
+        if caves[cave]!.type == .small {
+            if path.contains(cave) {
+                continue
+            }
+        }
+        if caves[cave]!.type == .end {
+            _path.append("end")
+            print(_path.joined(separator: ","))
+            routes += 1
+            continue
+        }
+        if caves[cave]!.type == .start {
+            continue
+        }
+        routes += process(cave, path: _path, caves: caves)
+    }
+    return routes
+}
+
+enum CaveType {
+    case big
+    case small
+    case start
+    case end
+}
+
+struct Cave {
+    let type: CaveType
+    var neighbours: [String]
 }
 
 main()
