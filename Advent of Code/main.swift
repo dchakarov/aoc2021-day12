@@ -49,6 +49,9 @@ func main() {
 
     let routes = process("start", path: [], caves: caves)
     print(routes)
+
+    let routes2 = process2("start", path: [], revisits: 0, caves: caves)
+    print(routes2)
 }
 
 func process(_ node: String, path: [String], caves: [String: Cave]) -> Int {
@@ -71,6 +74,36 @@ func process(_ node: String, path: [String], caves: [String: Cave]) -> Int {
             continue
         }
         routes += process(cave, path: _path, caves: caves)
+    }
+    return routes
+}
+
+func process2(_ node: String, path: [String], revisits: Int, caves: [String: Cave]) -> Int {
+    var _revisits = revisits
+    var routes = 0
+    var _path = path
+    _path.append(node)
+    for cave in caves[node]!.neighbours {
+        if caves[cave]!.type == .small {
+            if path.contains(cave) {
+                if _revisits == 0 {
+                    _revisits = 1
+                } else {
+                    continue
+                }
+            }
+        }
+        if caves[cave]!.type == .end {
+            _path.append("end")
+            print(_path.joined(separator: ","))
+            routes += 1
+            _revisits = 0
+            continue
+        }
+        if caves[cave]!.type == .start {
+            continue
+        }
+        routes += process2(cave, path: _path, revisits: _revisits, caves: caves)
     }
     return routes
 }
